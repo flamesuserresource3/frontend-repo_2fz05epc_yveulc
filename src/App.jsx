@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import Header from './components/Header.jsx';
+import GenericAdminPage from './components/GenericAdminPage.jsx';
 import VesselList from './components/VesselList.jsx';
 import VesselEditor from './components/VesselEditor.jsx';
-import AdminDashboard from './components/AdminDashboard.jsx';
 
 // Seed data to demonstrate functionality
 const initialVessels = [
@@ -38,7 +38,7 @@ const initialVessels = [
   },
 ];
 
-// Default admin settings for device editor tab visibility per role
+// Default admin settings for device editor tab visibility per role + empty roleConfigs
 const defaultSettings = {
   roles: ['camera', 'plc', 'controller', 'sensor'],
   visibility: {
@@ -47,10 +47,11 @@ const defaultSettings = {
     controller: { general: true, network: true, notes: true },
     sensor: { general: true, network: false, notes: true },
   },
+  roleConfigs: {},
 };
 
 export default function App() {
-  const [route, setRoute] = useState('home'); // home | editor | admin
+  const [route, setRoute] = useState('admin'); // home | editor | admin
   const [vessels, setVessels] = useState(initialVessels);
   const [activeVesselId, setActiveVesselId] = useState(null);
   const [settings, setSettings] = useState(defaultSettings);
@@ -95,6 +96,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900">
       <Header onGoHome={goHome} onGoAdmin={goAdmin} />
+
       {route === 'home' && (
         <VesselList
           vessels={vessels}
@@ -114,10 +116,10 @@ export default function App() {
       )}
 
       {route === 'admin' && (
-        <AdminDashboard
-          settings={settings}
-          onUpdate={(s) => setSettings(s)}
-          onBack={() => setRoute('home')}
+        <GenericAdminPage
+          initialSettings={settings}
+          onSave={(s) => { setSettings(s); setRoute('home'); }}
+          onCancel={() => setRoute('home')}
         />
       )}
     </div>
