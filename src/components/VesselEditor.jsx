@@ -94,7 +94,7 @@ function DeviceList({ title, items, onAdd, onEdit }) {
   );
 }
 
-export default function VesselEditor({ vessel, onBack, onChange }) {
+export default function VesselEditor({ vessel, onBack, onChange, settings }) {
   const [currentTab, setCurrentTab] = useState('basic');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingDevice, setEditingDevice] = useState(null);
@@ -163,6 +163,7 @@ export default function VesselEditor({ vessel, onBack, onChange }) {
         onClose={() => setModalOpen(false)}
         initial={editingDevice}
         onSave={(data) => { saveDevice(data); setModalOpen(false); }}
+        settings={settings}
       />
     </div>
   );

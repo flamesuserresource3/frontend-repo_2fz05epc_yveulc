@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
+import Header from './components/Header.jsx';
 import VesselList from './components/VesselList.jsx';
 import VesselEditor from './components/VesselEditor.jsx';
+import AdminDashboard from './components/AdminDashboard.jsx';
 
 // Seed data to demonstrate functionality
 const initialVessels = [
@@ -36,9 +38,22 @@ const initialVessels = [
   },
 ];
 
+// Default admin settings for device editor tab visibility per role
+const defaultSettings = {
+  roles: ['camera', 'plc', 'controller', 'sensor'],
+  visibility: {
+    camera: { general: true, network: true, notes: true },
+    plc: { general: true, network: true, notes: false },
+    controller: { general: true, network: true, notes: true },
+    sensor: { general: true, network: false, notes: true },
+  },
+};
+
 export default function App() {
+  const [route, setRoute] = useState('home'); // home | editor | admin
   const [vessels, setVessels] = useState(initialVessels);
   const [activeVesselId, setActiveVesselId] = useState(null);
+  const [settings, setSettings] = useState(defaultSettings);
 
   const activeVessel = useMemo(() => vessels.find(v => v.id === activeVesselId) || null, [vessels, activeVesselId]);
 
@@ -54,6 +69,12 @@ export default function App() {
     };
     setVessels(prev => [newVessel, ...prev]);
     setActiveVesselId(id);
+    setRoute('editor');
+  };
+
+  const handleOpenVessel = (id) => {
+    setActiveVesselId(id);
+    setRoute('editor');
   };
 
   const handleUpdateVessel = (updated) => {
@@ -62,23 +83,41 @@ export default function App() {
 
   const handleDeleteVessel = (id) => {
     setVessels(prev => prev.filter(v => v.id !== id));
-    if (activeVesselId === id) setActiveVesselId(null);
+    if (activeVesselId === id) {
+      setActiveVesselId(null);
+      setRoute('home');
+    }
   };
+
+  const goHome = () => { setRoute('home'); };
+  const goAdmin = () => { setRoute('admin'); };
 
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900">
-      {!activeVessel ? (
+      <Header onGoHome={goHome} onGoAdmin={goAdmin} />
+      {route === 'home' && (
         <VesselList
           vessels={vessels}
-          onOpenVessel={setActiveVesselId}
+          onOpenVessel={handleOpenVessel}
           onCreateVessel={handleCreateVessel}
           onDeleteVessel={handleDeleteVessel}
         />
-      ) : (
+      )}
+
+      {route === 'editor' && activeVessel && (
         <VesselEditor
           vessel={activeVessel}
-          onBack={() => setActiveVesselId(null)}
+          onBack={() => { setRoute('home'); setActiveVesselId(null); }}
           onChange={handleUpdateVessel}
+          settings={settings}
+        />
+      )}
+
+      {route === 'admin' && (
+        <AdminDashboard
+          settings={settings}
+          onUpdate={(s) => setSettings(s)}
+          onBack={() => setRoute('home')}
         />
       )}
     </div>

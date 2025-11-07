@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
-const tabs = [
+const BASE_TABS = [
   { id: 'general', name: 'General' },
   { id: 'network', name: 'Networking' },
   { id: 'notes', name: 'Notes' },
 ];
 
-export default function DeviceModal({ open, onClose, initial, onSave }) {
+export default function DeviceModal({ open, onClose, initial, onSave, settings }) {
   const [active, setActive] = useState('general');
   const [form, setForm] = useState({ id: null, name: '', ip: '', mac: '', notes: '', type: '' });
 
@@ -16,6 +16,20 @@ export default function DeviceModal({ open, onClose, initial, onSave }) {
       setForm({ id: initial?.id || null, name: initial?.name || '', ip: initial?.ip || '', mac: initial?.mac || '', notes: initial?.notes || '', type: initial?.type || '' });
     }
   }, [open, initial]);
+
+  const allowedTabs = useMemo(() => {
+    const role = (form.type || '').toLowerCase();
+    const visibility = settings?.visibility?.[role];
+    if (!visibility) return BASE_TABS; // no restrictions for unknown role or missing settings
+    return BASE_TABS.filter(t => visibility[t.id]);
+  }, [form.type, settings]);
+
+  useEffect(() => {
+    if (open) {
+      const ids = allowedTabs.map(t => t.id);
+      if (!ids.includes(active)) setActive(ids[0] || 'general');
+    }
+  }, [allowedTabs, active, open]);
 
   if (!open) return null;
 
@@ -33,7 +47,7 @@ export default function DeviceModal({ open, onClose, initial, onSave }) {
         </div>
         <div className="flex">
           <div className="w-48 border-r border-neutral-200 bg-neutral-50">
-            {tabs.map(t => (
+            {allowedTabs.map(t => (
               <button key={t.id} onClick={()=>setActive(t.id)} className={`block w-full px-4 py-3 text-left text-sm hover:bg-neutral-100 ${active===t.id ? 'bg-neutral-100 font-medium' : ''}`}>
                 {t.name}
               </button>
@@ -47,8 +61,9 @@ export default function DeviceModal({ open, onClose, initial, onSave }) {
                   <input value={form.name} onChange={e=>setForm(v=>({ ...v, name: e.target.value }))} className="w-full rounded-lg border border-neutral-200 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., Bridge Cam" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Type</label>
-                  <input value={form.type} onChange={e=>setForm(v=>({ ...v, type: e.target.value }))} className="w-full rounded-lg border border-neutral-200 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500" placeholder="camera, plc, controller" />
+                  <label className="mb-1 block text-sm font-medium">Type (Role)</label>
+                  <input value={form.type} onChange={e=>setForm(v=>({ ...v, type: e.target.value }))} className="w-full rounded-lg border border-neutral-200 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500" placeholder="camera, plc, controller, sensor" />
+                  <p className="mt-1 text-xs text-neutral-500">Tabs adapt based on role visibility set in Admin.</p>
                 </div>
               </div>
             )}
